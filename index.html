@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Sài Gòn Rush - Game 3D Endless Runner Việt Nam</title>
+  <!-- Google Fonts: Outfit cho văn bản, Space Grotesk cho tiêu đề, Rajdhani cho số HUD cực kỳ sắc nét -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Rajdhani:wght@600;700;800&family=Space+Grotesk:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/src/style.css">
+</head>
+<body>
+  <!-- Canvas kết xuất Three.js -->
+  <canvas id="game-canvas"></canvas>
+
+  <!-- LỚP PHỦ GIAO DIỆN (UI OVERLAYS) -->
+
+  <!-- 1. Màn hình tải tài nguyên (Loading Screen) -->
+  <div id="loading-screen" class="ui-screen active">
+    <div class="glass-panel text-center">
+      <h1 class="game-logo glow-text">SÀI GÒN RUSH</h1>
+      <p class="subtitle">Trải nghiệm đường phố Sài Gòn 3D</p>
+      
+      <div class="loading-container">
+        <div class="loading-bar">
+          <div id="loading-bar-fill" style="width: 0%"></div>
+        </div>
+        <p id="loading-text">Đang chuẩn bị động cơ...</p>
+      </div>
+
+      <div class="loading-tips">
+        <p class="tip-title">Mẹo chơi:</p>
+        <p class="tip-content">Thu thập cà phê sữa đá để sạc năng lượng Fever Mode!</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Menu chính (Main Menu) -->
+  <div id="main-menu" class="ui-screen">
+    <div class="glass-panel">
+      <h1 class="game-logo glow-text animated-logo">SÀI GÒN RUSH</h1>
+      <p class="subtitle">Endless Runner Việt Nam</p>
+
+      <div class="high-score-board">
+        <span>KỶ LỤC CỦA BẠN:</span>
+        <span id="menu-high-score" class="score-value">0</span>
+      </div>
+
+      <!-- Khu vực chọn nhân vật -->
+      <div class="character-select-container">
+        <h3>CHỌN NHÂN VẬT</h3>
+        <div class="character-carousel">
+          <button id="char-prev" class="carousel-btn prev-btn">&lt;</button>
+          <div class="character-card active">
+            <div id="char-avatar" class="character-avatar shipper-skin"></div>
+            <div class="character-info">
+              <span id="char-name" class="char-name">Anh Shipper Công Nghệ</span>
+              <span id="char-desc" class="char-desc">+10% tốc độ sạc Fever</span>
+            </div>
+          </div>
+          <button id="char-next" class="carousel-btn next-btn">&gt;</button>
+        </div>
+      </div>
+
+      <div class="menu-actions">
+        <button id="btn-start" class="btn-primary glow-btn">CHƠI NGAY</button>
+        <button id="btn-mute" class="btn-secondary">
+          <span class="sound-icon">🔊</span> Âm Thanh: Bật
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Giao diện chơi game (HUD) -->
+  <div id="hud" class="ui-hud">
+    <div class="hud-top-bar">
+      <!-- Bộ thu thập Cà phê -->
+      <div class="hud-item coffee-counter">
+        <div class="hud-icon-wrapper">
+          <span class="hud-icon">☕</span>
+        </div>
+        <div class="hud-info-text">
+          <span class="hud-label">CÀ PHÊ</span>
+          <span id="hud-coffee-count" class="hud-value">0</span>
+        </div>
+      </div>
+
+      <!-- Khung Power-ups đang kích hoạt -->
+      <div id="active-powerups" class="active-powerups-container">
+        <!-- Power-up badges được sinh động bằng JS -->
+      </div>
+
+      <!-- Điểm số hiện tại -->
+      <div class="hud-item score-counter">
+        <div class="hud-icon-wrapper">
+          <span class="hud-icon">🏆</span>
+        </div>
+        <div class="hud-info-text">
+          <span class="hud-label">ĐIỂM SỐ</span>
+          <span id="hud-score" class="hud-value">000000</span>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- Thanh năng lượng Fever (Fever Gauge) -->
+    <div class="hud-bottom-bar">
+      <div class="fever-gauge-container">
+        <div class="fever-label-wrapper">
+          <span class="fever-label glow-text-yellow">RUSH FEVER</span>
+          <span id="hud-fever-percent" class="fever-percent">0%</span>
+        </div>
+        <div class="fever-bar">
+          <div id="fever-bar-fill" style="width: 0%"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hướng dẫn điều khiển nhanh trên desktop (Tự ẩn sau 5 giây) -->
+    <div id="desktop-instructions" class="instructions-panel">
+      <p>Nhấn [A]/[D] hoặc [◀]/[▶] để chuyển làn. [W]/[▲] để Nhảy. [S]/[▼] để Trượt.</p>
+    </div>
+  </div>
+
+  <!-- 4. Màn hình Game Over -->
+  <div id="game-over-screen" class="ui-screen">
+    <div class="glass-panel text-center">
+      <h2 class="game-over-title glow-text-red">BỊ LẬP BIÊN BẢN!</h2>
+      <p class="subtitle">Bạn đã va chạm trên đường chạy</p>
+
+      <div class="stats-panel">
+        <div class="stat-row">
+          <span>Quãng đường:</span>
+          <span id="over-score" class="stat-value">0 m</span>
+        </div>
+        <div class="stat-row">
+          <span>Cà phê thu thập:</span>
+          <span id="over-coffee" class="stat-value">0 ly</span>
+        </div>
+        <div class="stat-row highlight">
+          <span>Kỷ lục mới:</span>
+          <span id="over-high-score" class="stat-value">12,450</span>
+        </div>
+      </div>
+
+      <div class="game-over-actions">
+        <button id="btn-restart" class="btn-primary glow-btn-red">CHƠI LẠI</button>
+        <button id="btn-home" class="btn-secondary">TRANG CHỦ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Entry Point script -->
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
